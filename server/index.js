@@ -6,6 +6,7 @@ import morgan from "morgan";
 import helmet from "helmet";
 import connectDB from "./src/config/connectDb.js";
 import router from "./src/config/router.config.js";
+import multer from "multer";
 
 dotenv.config();
 
@@ -47,45 +48,65 @@ app.use((req, res, next) => {
   next({ code: 404, message: "Resource not found", status: "NOT_FOUND" });
 });
 
-// error handling middleware
+// Error-handling middleware
 app.use((error, req, res, next) => {
-  // console.log(error);
-  let code = error.code || 500;
-  let msg = error.message || "Internal Server Error";
-  let status = error.status || "SERVER_ERROR";
-  let detail = error.detail || null;
+  console.error("Error caught:", error);
 
-  // custom error handling
-  // if (error instanceof MulterError){
-  //     code = 400;
-  //     msg = "File upload error";
-  //     status = "BAD_REQUEST";
+  let code = 500;
+  let msg = "Internal Server Error";
+  let status = "SERVER_ERROR";
+  let detail = null;
 
-  //   if (error.code === "LIMIT_UNEXPECTED_FILE") {
-  //     detail = {
-  //       [error.field]: "image upload is not allowed"
-  //     }
-  //   }
-  //   if (error.code === "LIMIT_FILE_SIZE") {
-  //     detail = {
-  //       [error.field]: "File size is too large"
-  //     }
-  //   }
-  // }
+  // Multer-specific errors (e.g., wrong field name, large file)
+  if (error instanceof multer.MulterError) {
+    code = 400;
+    status = "BAD_REQUEST";
+    msg = "File upload error";
 
+    if (error.code === "LIMIT_UNEXPECTED_FILE") {
+      msg = "Unexpected file field";
+      detail = {
+        [error.field || "file"]: "Unexpected field or too many files uploaded",
+      };
+    }
+
+    if (error.code === "LIMIT_FILE_SIZE") {
+      msg = "File too large";
+      detail = {
+        [error.field || "file"]: "File size exceeds 3MB limit",
+      };
+    }
+  }
+
+  // Handle your custom validation error thrown in fileFilter
+  if (
+    typeof error === "object" &&
+    typeof error.code === "number" &&
+    error.message &&
+    error.status
+  ) {
+    code = error.code;
+    msg = error.message;
+    status = error.status;
+    detail = error.detail || null;
+  }
+
+  // Mongoose/Mongo error handling
   if (error.name === "MongooseError" || error.name === "MongoServerError") {
     code = 400;
     status = "VALIDATION_FAILED";
 
-    if (+error.cause.code === 11000) {
-      // unique validation failed
+    if (+error.cause?.code === 11000) {
       msg = "Unique Validation Failed";
-      let failedField = Object.keys(error.cause.keyPattern).pop();
+      let failedField = Object.keys(error.cause.keyPattern || {}).pop();
       detail = {
         [failedField]: error.message,
       };
     }
   }
+
+  // Ensure status code is a number
+  code = typeof code === "number" ? code : 500;
 
   res.status(code).json({
     error: detail,

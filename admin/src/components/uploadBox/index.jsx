@@ -1,85 +1,168 @@
-import { useState, useEffect, useContext } from "react";
+import { useState, useContext, useRef } from "react";
 import { FaRegImages } from "react-icons/fa6";
-import { postData, uploadImages } from "../../utils/api.js";
+import { MdClose } from "react-icons/md";
+import { uploadImages, deleteData } from "../../utils/api.js";
 import { MyContext } from "../../App.jsx";
+import { CircularProgress } from "@mui/material";
 
-const UploadBox = (props) => {
-  const [previews, setPreviews] = useState([]);
+const UploadBox = ({
+  previews = [],
+  setPreviewsFun,
+  url,
+  multiple = false,
+}) => {
   const [uploading, setUploading] = useState(false);
-
+  const [removingIndex, setRemovingIndex] = useState(null);
   const context = useContext(MyContext);
+  const fileInputRef = useRef(null);
 
-  let selectedImages = [];
-  const formdata = new FormData();
+  const handleUploadClick = () => {
+    fileInputRef.current?.click();
+  };
 
-  useEffect(() => {
-    const images = context?.userData?.images;
-    if (images && images !== "false") {
-      setPreviews([images]);
-    } else {
-      setPreviews([]);
-    }
-  }, [context?.userData?.images]);
+  const handleRemove = async (indexToRemove) => {
+    const imgUrl = previews[indexToRemove];
+    if (!imgUrl) return;
 
-  const onChangeFile = async (e, apiEndPoint) => {
     try {
-      setPreviews([]);
-      const files = e.target.files;
-      setUploading(true);
+      setRemovingIndex(indexToRemove);
 
-      for (var i = 0; i < files.length; i++) {
-        if (
-          files[i] &&
-          (files[i].type === "image/jpeg" ||
-            files[i].type === "image/jpg" ||
-            files[i].type === "image/png" ||
-            files[i].type === "image/webp")
-        ) {
-          const file = files[i];
+      const res = await deleteData(
+        `/api/category/delete-image?img=${encodeURIComponent(imgUrl)}`
+      );
 
-          selectedImages.push(file);
-          formdata.append("images", file);
-        } else {
-          context.notify(
-            "Only JPG, JPEG, PNG, or WEBP images are allowed.",
-            "error"
-          );
-          setUploading(false);
-          return false;
-        }
+      if (res?.success) {
+        // Remove image from previews AND update parent state
+        setPreviewsFun((prev) =>
+          prev.filter((_, idx) => idx !== indexToRemove)
+        );
+        context.notify("Image removed successfully.", "success");
+      } else {
+        context.notify("Failed to remove image.", "error");
       }
-
-      uploadImages(apiEndPoint, formdata).then((res) => {
-        setUploading(false);
-        const uploadedImages = Array.isArray(res?.data?.images)
-          ? res.data.images
-          : [res.data.images]; // Ensure it's an array
-         console.log("Uploaded images:", res.data.images);
-        props.setPreviewsFun(uploadedImages);
-      });
-
     } catch (error) {
-      console.log(error);
-      setUploading(false);
+      console.error("Remove image error:", error);
+      context.notify("Error while removing image.", "error");
+    } finally {
+      setRemovingIndex(null);
     }
   };
 
+  const onChangeFile = async (e) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    const formData = new FormData();
+    const maxSize = 2 * 1024 * 1024; // 2MB
+
+    for (const file of files) {
+      const isValidType = [
+        "image/jpeg",
+        "image/jpg",
+        "image/png",
+        "image/webp",
+      ].includes(file.type);
+      const isValidSize = file.size <= maxSize;
+
+      if (!isValidType) {
+        context.notify(
+          "Only JPG, JPEG, PNG, or WEBP images are allowed.",
+          "error"
+        );
+        e.target.value = "";
+        return;
+      }
+
+      if (!isValidSize) {
+        context.notify(
+          `"${file.name}" is too large. Max allowed size is 2MB.`,
+          "error"
+        );
+        e.target.value = "";
+        return;
+      }
+
+      formData.append("images", file);
+    }
+
+    setUploading(true);
+    try {
+      const res = await uploadImages(url, formData);
+
+      const uploadedImages = res?.data?.images || res?.data?.bannerImages || [];
+
+      if (!uploadedImages.length) {
+        context.notify("Upload failed or invalid response.", "error");
+        return;
+      }
+
+      // Append new images to current previews and update parent state
+      setPreviewsFun((prevImages) => [...prevImages, ...uploadedImages]);
+    } catch (error) {
+      console.error("Upload error:", error);
+      context.notify("Upload failed.", "error");
+    } finally {
+      setUploading(false);
+      e.target.value = "";
+    }
+  };
 
   return (
-    <>
-      <div className="uploadBox p-3 rounded-md overflow-hidden border border-dashed border-[rgba(0,0,0,0.3)] h-[150px] w-[100%] bg-gray-100 cursor-pointer hover:bg-gray-200 flex items-center justify-center flex-col relative">
-        <FaRegImages className="text-[40px] opacity-35 pointer-events-none" />
-        <h4 className="text-[14px] pointer-events-none">Image Upload</h4>
+    <div className="flex flex-wrap gap-4">
+      <div
+        className="uploadBox p-3 rounded-md overflow-hidden border border-dashed border-[rgba(0,0,0,0.3)] min-h-[150px] w-[150px] bg-gray-100 cursor-pointer hover:bg-gray-200 relative flex-shrink-0"
+        onClick={handleUploadClick}
+      >
+        <div className="absolute inset-0 flex items-center justify-center flex-col z-10">
+          <FaRegImages className="text-[40px] opacity-35 pointer-events-none" />
+          <h4 className="text-[14px] pointer-events-none text-center px-2">
+            {uploading ? (
+              <CircularProgress className="!text-gray-400" />
+            ) : (
+              "Click to Upload Image(s)"
+            )}
+          </h4>
+        </div>
+
         <input
+          ref={fileInputRef}
           type="file"
           accept="image/*"
-          multiple={props.multiple !== undefined ? props.multiple : false}
-          className="absolute top-0 left-0 opacity-0 w-full h-full z-50"
-          name="images"
-          onChange={(e) => onChangeFile(e, props?.url)}
+          multiple={multiple}
+          className="hidden"
+          onChange={onChangeFile}
         />
       </div>
-    </>
+
+      {/* Preview Images */}
+      <div className="flex flex-wrap gap-4">
+        {previews.map((imgUrl, idx) => (
+          <div
+            key={idx}
+            className="relative w-[150px] h-[150px] border border-dashed border-[rgba(0,0,0,0.3)] rounded-md overflow-hidden group"
+          >
+            <img
+              src={imgUrl}
+              alt={`preview-${idx}`}
+              className="w-full h-full object-contain"
+            />
+            <button
+              type="button"
+              onClick={() => handleRemove(idx)}
+              className="absolute top-1 right-1 bg-black bg-opacity-50 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+              title="Remove"
+              disabled={removingIndex === idx}
+            >
+              {removingIndex === idx ? (
+                <CircularProgress size={18} className="!text-white" />
+              ) : (
+                <MdClose size={18} />
+              )}
+            </button>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 };
 

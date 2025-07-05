@@ -1,11 +1,9 @@
 import { Swiper, SwiperSlide } from "swiper/react";
 import "swiper/css";
 import "swiper/css/navigation";
-import { Autoplay, Navigation } from 'swiper/modules';
+import { Autoplay, Navigation } from "swiper/modules";
 
-
-
-const HomeSLider = () => {
+const HomeSLider = (props) => {
   return (
     <>
       <div className="homeSlider py-4">
@@ -21,41 +19,20 @@ const HomeSLider = () => {
             }}
             className="sliderHome"
           >
-            <SwiperSlide>
-              <div className="item rounded-[20px] overflow-hidden">
-                <img
-                  src="https://api.spicezgold.com/download/file_1734524985581_NewProject(11).jpg"
-                  alt="banner"
-                  className="w-full"
-                />
-              </div>
-            </SwiperSlide>
-            <SwiperSlide>
-              <div className="item rounded-[20px] overflow-hidden"></div>
-              <img
-                src="https://api.spicezgold.com/download/file_1734525014348_NewProject(7).jpg"
-                alt="banner"
-                className="w-full"
-              />
-            </SwiperSlide>
-            <SwiperSlide>
-              <div className="item rounded-[20px] overflow-hidden"></div>
-              <img
-                src="https://api.spicezgold.com/download/file_1734524930884_NewProject(6).jpg"
-                alt="banner"
-                className="w-full"
-              />
-            </SwiperSlide>
-
-            <SwiperSlide>
-              <div className="item rounded-[20px] overflow-hidden">
-                <img
-                  src="https://api.spicezgold.com/download/file_1734525002307_1723967638078_slideBanner1.6bbeed1a0c8ffb494f7c.jpg"
-                  alt="banner"
-                  className="w-full"
-                />
-              </div>
-            </SwiperSlide>
+            {props?.data?.length > 0 &&
+              props?.data?.map((item, index) => {
+                return (
+                  <SwiperSlide key={index}>
+                    <div className="item rounded-[20px] overflow-hidden">
+                      <img
+                        src={item?.images[0]}
+                        alt="banner"
+                        className="w-full"
+                      />
+                    </div>
+                  </SwiperSlide>
+                );
+              })}
           </Swiper>
         </div>
       </div>

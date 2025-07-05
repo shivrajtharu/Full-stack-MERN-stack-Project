@@ -17,7 +17,7 @@ const UserSchema = new mongoose.Schema(
     },
     avatar: {
       type: String,
-      default: false,
+      default: "",
     },
     mobile: {
       type: Number,
@@ -29,11 +29,11 @@ const UserSchema = new mongoose.Schema(
     },
     acess_token: {
       type: String,
-      default: ''
+      default: "",
     },
     refresh_token: {
       type: String,
-      default: ''
+      default: "",
     },
     last_login_date: {
       type: Date,
@@ -44,10 +44,13 @@ const UserSchema = new mongoose.Schema(
       enum: ["Active", "Inactive", "Suspended"],
       default: "Active",
     },
-    address_details: {
-      type: mongoose.Types.ObjectId,
-      ref: "Address",
-    },
+    address_details: [
+      {
+        type: mongoose.Types.ObjectId,
+        ref: "Address",
+      },
+    ],
+
     shopping_cart: {
       type: mongoose.Types.ObjectId,
       ref: "Cart",

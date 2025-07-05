@@ -30,12 +30,16 @@ import Address from "./pages/myAccount/address";
 export const MyContext = createContext();
 
 function App() {
-  const [openProdutctDetailsModal, setOpenProdutctDetailsModal] = useState(false);
+  const [openProdutctDetailsModal, setOpenProdutctDetailsModal] = useState({
+    open: false,
+    item: {},
+  });
   const [maxWidth, setMaxWidth] = useState("lg");
   const [fullWidth, setFullWidth] = useState(true);
   const [isLogin, setIsLogin] = useState(false);
   const [userData, setUserData] = useState(null);
   const [openCartPanel, setOpenCartPanel] = useState(false);
+  const [catData, setCatData] = useState([]);
 
   const notify = (msg, type) => {
     const types = {
@@ -47,24 +51,24 @@ function App() {
     (types[type] || (() => toast(msg)))();
   };
 
-useEffect(() => {
-  const fetchUserDetails = async () => {
-    const token = localStorage.getItem("accessToken");
-    if (token) {
-      setIsLogin(true);
-      setUserData(null); // Reset before fetching
-      try {
-        const res = await fetchDataFromApi("/api/user/user-details");
-        const data = res?.data;
-        setUserData(data);
-      } catch (error) {
-        setIsLogin(false);
-        setUserData(null);
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
-        notify('Failed to fetch user details. Please login again.', 'error');
-      }
-    } else {
+  useEffect(() => {
+    const fetchUserDetails = async () => {
+      const token = localStorage.getItem("accessToken");
+      if (token) {
+        setIsLogin(true);
+        setUserData(null); // Reset before fetching
+        try {
+          const res = await fetchDataFromApi("/api/user/user-details");
+          const data = res?.data;
+          setUserData(data);
+        } catch (error) {
+          setIsLogin(false);
+          setUserData(null);
+          localStorage.removeItem("accessToken");
+          localStorage.removeItem("refreshToken");
+          notify("Failed to fetch user details. Please login again.", "error");
+        }
+      } else {
         setIsLogin(false);
         setUserData(null);
         localStorage.removeItem("accessToken");
@@ -74,13 +78,31 @@ useEffect(() => {
           notify("Your session is closed Please login again", "error");
         }
       }
-  };
+    };
 
-  fetchUserDetails();
-}, []);
+    fetchUserDetails();
+  }, []);
 
+  useEffect(() => {
+    fetchDataFromApi("/api/category/").then((res) => {
+      if (res?.error === false) {
+        setCatData(res?.data);
+      }
+    });
+  }, []);
 
-  const handleCloseProductDetailsModal = () => setOpenProdutctDetailsModal(false);
+  const handleOpenProductDetailsModal = (status, item) =>
+    setOpenProdutctDetailsModal({
+      open: status,
+      item: item,
+    });
+
+  const handleCloseProductDetailsModal = () =>
+    setOpenProdutctDetailsModal({
+      open: false,
+      item: {},
+    });
+
   const toggleCartPannel = (newOpen) => () => setOpenCartPanel(newOpen);
 
   const values = {
@@ -93,6 +115,9 @@ useEffect(() => {
     setIsLogin,
     setUserData,
     userData,
+    catData,
+    setCatData,
+    handleOpenProductDetailsModal,
   };
 
   return (
@@ -106,13 +131,25 @@ useEffect(() => {
             <>
               <Routes>
                 <Route path="/" exact element={<Home />} />
-                <Route path="/productListing" exact element={<ProductListing />} />
-                <Route path="/productDetails/:id" exact element={<ProductDetails />} />
+                <Route
+                  path="/productListing"
+                  exact
+                  element={<ProductListing />}
+                />
+                <Route
+                  path="/productDetails/:id"
+                  exact
+                  element={<ProductDetails />}
+                />
                 <Route path="/login" exact element={<Login />} />
                 <Route path="/register" exact element={<Register />} />
                 <Route path="/cart" exact element={<CartPage />} />
                 <Route path="/verify" exact element={<Verify />} />
-                <Route path="/reset-password" exact element={<ResetPassword />} />
+                <Route
+                  path="/reset-password"
+                  exact
+                  element={<ResetPassword />}
+                />
                 <Route path="/checkout" exact element={<Checkout />} />
                 <Route path="/my-account" exact element={<MyAccount />} />
                 <Route path="/my-list" exact element={<MyList />} />
@@ -128,7 +165,7 @@ useEffect(() => {
       <Toaster />
 
       <Dialog
-        open={openProdutctDetailsModal}
+        open={openProdutctDetailsModal.open}
         fullWidth={fullWidth}
         maxWidth={maxWidth}
         onClose={handleCloseProductDetailsModal}
@@ -142,12 +179,16 @@ useEffect(() => {
             >
               <IoCloseSharp className="text-[20px]" />
             </Button>
-            <div className="col1 w-[40%] px-3">
-              <ProductZoom />
-            </div>
-            <div className="col2 productContent py-7 px-8 pr-16">
-              <ProductDetailsComponent />
-            </div>
+            {openProdutctDetailsModal?.item && Object.keys(openProdutctDetailsModal.item).length  > 0 && (
+              <>
+                <div className="col1 w-[40%] px-3">
+                  <ProductZoom images={openProdutctDetailsModal?.item?.images || []} />
+                </div>
+                <div className="col2 productContent pb-7 px-8 pr-16">
+                  <ProductDetailsComponent item={openProdutctDetailsModal?.item || {}}/>
+                </div>
+              </>
+            )}
           </div>
         </DialogContent>
       </Dialog>

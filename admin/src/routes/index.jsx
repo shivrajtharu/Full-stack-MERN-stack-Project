@@ -13,6 +13,10 @@ import Users from "../pages/users";
 import Orders from "../pages/orders";
 import ResetPassword from "../pages/resetPassword";
 import Profile from "../pages/profile";
+import ProductDetail from "../pages/products/productDetail";
+import AddRams from "../pages/products/addRams";
+import AddWeight from "../pages/products/addWeight";
+import AddSize from "../pages/products/addSize";
 
 
 const router = createBrowserRouter([
@@ -71,6 +75,22 @@ const router = createBrowserRouter([
       {
         path: "profile",
         element: <Profile />,
+      },
+      {
+        path: "product/:id",
+        element: <ProductDetail />
+      },
+      {
+        path: "products/addRams",
+        element: <AddRams />
+      },
+      {
+        path: "products/addWeight",
+        element: <AddWeight />
+      },
+      {
+        path: "products/addSize",
+        element: <AddSize />
       },
     ],
   },

@@ -45,7 +45,7 @@ const SignUp = () => {
   };
 
   const handleSubmit = (e) => {
-    e.preventDefault(); // page will not reload
+    e.preventDefault(); 
 
     setIsLoading(true);
 

@@ -219,7 +219,6 @@ const Profile = () => {
     }
   }, [context?.userData?.avatar]);
 
-  
   let selectedImages = [];
 
   const onChangeFile = async (e, apiEndPoint) => {
@@ -263,268 +262,266 @@ const Profile = () => {
 
   return (
     <>
-      <div className="flex-col w-[82%] px-5 py-0">
-        <div className="card my-5 shadow-md sm:rounded-lg w-[65%] bg-white pt-5 pb-5 px-5">
-          <div className="flex items-center justify-between">
-            <h2 className="text-[18px] font-[600]">User Profile</h2>
-            <Button
-              className="!ml-auto"
-              onClick={() =>
-                setIsChangePasswordFormShow(!isChangePasswordFormShow)
-              }
-            >
-              Changed Password
-            </Button>
-          </div>
+      <div className="card my-5 shadow-md sm:rounded-lg w-[65%] bg-white pt-5 pb-5 px-5">
+        <div className="flex items-center justify-between">
+          <h2 className="text-[18px] font-[600]">User Profile</h2>
+          <Button
+            className="!ml-auto"
+            onClick={() =>
+              setIsChangePasswordFormShow(!isChangePasswordFormShow)
+            }
+          >
+            Changed Password
+          </Button>
+        </div>
 
-          <br />
+        <br />
 
-          <div className="w-[110px] h-[110px] rounded-full overflow-hidden mb-4 relative group flex items-center justify-center bg-gray-200">
-            {uploading ? (
-              <CircularProgress color="inherit" />
-            ) : previews.length > 0 ? (
-              previews.map((img, index) => (
-                <img
-                  src={img}
-                  key={index}
-                  className="w-full h-full object-cover"
-                  alt="User Avatar"
-                />
-              ))
-            ) : (
+        <div className="w-[110px] h-[110px] rounded-full overflow-hidden mb-4 relative group flex items-center justify-center bg-gray-200">
+          {uploading ? (
+            <CircularProgress color="inherit" />
+          ) : previews.length > 0 ? (
+            previews.map((img, index) => (
               <img
-                src="/user-image.png"
+                src={img}
+                key={index}
                 className="w-full h-full object-cover"
-                alt="Default Avatar"
+                alt="User Avatar"
               />
-            )}
+            ))
+          ) : (
+            <img
+              src="/user-image.png"
+              className="w-full h-full object-cover"
+              alt="Default Avatar"
+            />
+          )}
 
-            <div className="overlay w-[100%] h-[100%] absolute top-0 left-0 z-50 bg-[rgba(0,0,0,0.7)] flex items-center justify-center cursor-pointer opacity-0 transition-all group-hover:opacity-100">
-              <FaCloudUploadAlt className="text-[#fff] text-[25px]" />
+          <div className="overlay w-[100%] h-[100%] absolute top-0 left-0 z-50 bg-[rgba(0,0,0,0.7)] flex items-center justify-center cursor-pointer opacity-0 transition-all group-hover:opacity-100">
+            <FaCloudUploadAlt className="text-[#fff] text-[25px]" />
+            <input
+              type="file"
+              className="absolute top-0 left-0 h-full w-full opacity-0"
+              accept="image/*"
+              onChange={(e) => onChangeFile(e, "/api/user/user-avatar")}
+              name="avatar"
+            ></input>
+          </div>
+        </div>
+        <br />
+        <hr />
+        <form
+          className=" form mt-8"
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleSubmit(e);
+          }}
+        >
+          <div className="flex items-center gap-5">
+            <div className="w-[50%]">
               <input
-                type="file"
-                className="absolute top-0 left-0 h-full w-full opacity-0"
-                accept="image/*"
-                onChange={(e) => onChangeFile(e, "/api/user/user-avatar")}
-                name="avatar"
+                type="text"
+                name="name"
+                onChange={onChangeInput}
+                value={formFields.name}
+                disabled={isLoading === true ? true : false}
+                className="w-full h-[40px] border border-[rgba(0,0,0,0.2)] focus:outline-none p-3 focus:border-[rgba(0,0,0,0.4)] rounded-sm text-sm"
+              ></input>
+            </div>
+
+            <div className="w-[50%]">
+              <input
+                type="email"
+                name="email"
+                onChange={onChangeInput}
+                value={formFields.email}
+                disabled={isLoading === true ? true : false}
+                className="w-full h-[40px] border border-[rgba(0,0,0,0.2)] focus:outline-none p-3 focus:border-[rgba(0,0,0,0.4)] rounded-sm text-sm"
               ></input>
             </div>
           </div>
+
+          <div className="w-[49%] mt-4">
+            <PhoneInput
+              defaultCountry="np"
+              value={phone}
+              onChange={(phone) => {
+                setPhone(phone);
+                setFormFields((prevFields) => ({
+                  ...prevFields,
+                  mobile: phone,
+                }));
+              }}
+              disabled={isLoading === true ? true : false}
+            />
+          </div>
+
           <br />
+
+          <div
+            className="flex items-center justify-center hover:bg-[#e7f3f9] rounded-md  p-5 border border-dashed border-[rgba(0,0,0,0.2)] bg-[#f1faff] cursor-pointer"
+            onClick={() =>
+              context.setIsOpenFullScreenPanel({
+                open: true,
+                model: "Add New Address",
+              })
+            }
+          >
+            <span className="text-[14px] font-[500]"> Add Address</span>
+          </div>
+
+          <div className="flex flex-col gap-2 mt-4">
+            {context.address?.length > 0 &&
+              context.address?.map((address, index) => {
+                return (
+                  <>
+                    <label className="addressBox w-full flex items-center justify-center bg-[#f1f1f1] p-3 rounded-md cursor-pointer  border border-dashed border-[rgba(0,0,0,0.2)]">
+                      <Radio
+                        {...label}
+                        name="address"
+                        checked={selectedValue === address?._id}
+                        value={address?._id}
+                        onChange={handleChange}
+                      />
+                      <span className="text-[12px]">
+                        {address?.address_line1 +
+                          " " +
+                          address?.city +
+                          " " +
+                          address?.country +
+                          " " +
+                          address?.provision +
+                          " " +
+                          address?.pincode}
+                      </span>
+                    </label>
+                  </>
+                );
+              })}
+          </div>
+
+          <br />
+          <div className="flex items-center">
+            <Button
+              type="submit"
+              className="btn-blue btn-lg w-full"
+              disabled={isLoading === true ? true : false}
+            >
+              {isLoading === true ? (
+                <CircularProgress color="inherit" />
+              ) : (
+                "Update Profile"
+              )}
+            </Button>
+          </div>
+        </form>
+      </div>
+
+      <Collapse isOpened={isChangePasswordFormShow}>
+        <div className="card bg-white w-[65%] shadow-md rounded-md p-5 mb-5">
+          <div className="flex items-center pb-3">
+            <h2 className="pb-0 text-[18px] font-[600]">Change Password</h2>
+          </div>
           <hr />
           <form
-            className=" form mt-8"
+            className="mt-8"
             onSubmit={(e) => {
               e.preventDefault();
-              handleSubmit(e);
+              handleSubmitChangePassword(e);
             }}
           >
             <div className="flex items-center gap-5">
-              <div className="w-[50%]">
-                <input
-                  type="text"
-                  name="name"
+              <div className="w-[50%] form-group relative">
+                <TextField
+                  label="Old Password"
+                  type={isShowPassword === false ? "password" : "text"}
+                  variant="outlined"
+                  size="small"
+                  className="w-full"
+                  name="oldPassword"
                   onChange={onChangeInput}
-                  value={formFields.name}
-                  disabled={isLoading === true ? true : false}
-                  className="w-full h-[40px] border border-[rgba(0,0,0,0.2)] focus:outline-none p-3 focus:border-[rgba(0,0,0,0.4)] rounded-sm text-sm"
-                ></input>
+                  value={changePassword.oldPassword}
+                  disabled={isLoading2 === true ? true : false}
+                />
+                <Button
+                  className="!absolute top-[3px] right-[3px] z-50 !w-[35px] !h-[35px] !min-w-[35px] !rounded-full !text-black opacity-75"
+                  onClick={() => setIsShowPassword(!isShowPassword)}
+                >
+                  {isShowPassword === false ? (
+                    <IoMdEye className="text-[20px] opacity-75" />
+                  ) : (
+                    <IoMdEyeOff className="text-[20px] opacity-75" />
+                  )}
+                </Button>
               </div>
 
-              <div className="w-[50%]">
-                <input
-                  type="email"
-                  name="email"
+              <div className="w-[50%] form-group relative">
+                <TextField
+                  label="New Password"
+                  type={isShowPassword2 === false ? "password" : "text"}
+                  variant="outlined"
+                  size="small"
+                  className="w-full"
+                  name="newPassword"
                   onChange={onChangeInput}
-                  value={formFields.email}
-                  disabled={isLoading === true ? true : false}
-                  className="w-full h-[40px] border border-[rgba(0,0,0,0.2)] focus:outline-none p-3 focus:border-[rgba(0,0,0,0.4)] rounded-sm text-sm"
-                ></input>
+                  value={changePassword.newPassword}
+                  disabled={isLoading2 === true ? true : false}
+                />
+                <Button
+                  className="!absolute top-[3px] right-[3px] z-50 !w-[35px] !h-[35px] !min-w-[35px] !rounded-full !text-black opacity-75"
+                  onClick={() => setIsShowPassword2(!isShowPassword2)}
+                >
+                  {isShowPassword2 === false ? (
+                    <IoMdEye className="text-[20px] opacity-75" />
+                  ) : (
+                    <IoMdEyeOff className="text-[20px] opacity-75" />
+                  )}
+                </Button>
               </div>
             </div>
-
-            <div className="w-[49%] mt-4">
-              <PhoneInput
-                defaultCountry="np"
-                value={phone}
-                onChange={(phone) => {
-                  setPhone(phone);
-                  setFormFields((prevFields) => ({
-                    ...prevFields,
-                    mobile: phone,
-                  }));
-                }}
-                disabled={isLoading === true ? true : false}
-              />
-            </div>
-
-            <br />
-
-            <div
-              className="flex items-center justify-center hover:bg-[#e7f3f9] rounded-md  p-5 border border-dashed border-[rgba(0,0,0,0.2)] bg-[#f1faff] cursor-pointer"
-              onClick={() =>
-                context.setIsOpenFullScreenPanel({
-                  open: true,
-                  model: "Add New Address",
-                })
-              }
-            >
-              <span className="text-[14px] font-[500]"> Add Address</span>
-            </div>
-
-            <div className="flex flex-col gap-2 mt-4">
-              {context.address?.length > 0 &&
-                context.address?.map((address, index) => {
-                  return (
-                    <>
-                      <label className="addressBox w-full flex items-center justify-center bg-[#f1f1f1] p-3 rounded-md cursor-pointer  border border-dashed border-[rgba(0,0,0,0.2)]">
-                        <Radio
-                          {...label}
-                          name="address"
-                          checked={selectedValue === address?._id}
-                          value={address?._id}
-                          onChange={handleChange}
-                        />
-                        <span className="text-[12px]">
-                          {address?.address_line1 +
-                            " " +
-                            address?.city +
-                            " " +
-                            address?.country +
-                            " " +
-                            address?.provision +
-                            " " +
-                            address?.pincode}
-                        </span>
-                      </label>
-                    </>
-                  );
-                })}
+            <div className="flex items-center mt-4 gap-5">
+              <div className="w-[49%] form-group relative">
+                <TextField
+                  label="Confirm Password"
+                  type={isShowPassword3 === false ? "password" : "text"}
+                  variant="outlined"
+                  size="small"
+                  className="w-full"
+                  name="confirmPassword"
+                  onChange={onChangeInput}
+                  value={changePassword.confirmPassword}
+                  disabled={isLoading2 === true ? true : false}
+                />
+                <Button
+                  className="!absolute top-[3px] right-[3px] z-50 !w-[35px] !h-[35px] !min-w-[35px] !rounded-full !text-black opacity-75"
+                  onClick={() => setIsShowPassword3(!isShowPassword3)}
+                >
+                  {isShowPassword3 === false ? (
+                    <IoMdEye className="text-[20px] opacity-75" />
+                  ) : (
+                    <IoMdEyeOff className="text-[20px] opacity-75" />
+                  )}
+                </Button>
+              </div>
             </div>
 
             <br />
             <div className="flex items-center">
               <Button
                 type="submit"
-                className="btn-blue btn-lg w-full"
-                disabled={isLoading === true ? true : false}
+                className="btn-blue btn-lg w-[250px]"
+                disabled={isLoading2 === true ? true : false}
               >
-                {isLoading === true ? (
+                {isLoading2 === true ? (
                   <CircularProgress color="inherit" />
                 ) : (
-                  "Update Profile"
+                  "Change Password"
                 )}
               </Button>
             </div>
           </form>
         </div>
-
-        <Collapse isOpened={isChangePasswordFormShow}>
-          <div className="card bg-white w-[65%] shadow-md rounded-md p-5 mb-5">
-            <div className="flex items-center pb-3">
-              <h2 className="pb-0 text-[18px] font-[600]">Change Password</h2>
-            </div>
-            <hr />
-            <form
-              className="mt-8"
-              onSubmit={(e) => {
-                e.preventDefault();
-                handleSubmitChangePassword(e);
-              }}
-            >
-              <div className="flex items-center gap-5">
-                <div className="w-[50%] form-group relative">
-                  <TextField
-                    label="Old Password"
-                    type={isShowPassword === false ? "password" : "text"}
-                    variant="outlined"
-                    size="small"
-                    className="w-full"
-                    name="oldPassword"
-                    onChange={onChangeInput}
-                    value={changePassword.oldPassword}
-                    disabled={isLoading2 === true ? true : false}
-                  />
-                  <Button
-                    className="!absolute top-[3px] right-[3px] z-50 !w-[35px] !h-[35px] !min-w-[35px] !rounded-full !text-black opacity-75"
-                    onClick={() => setIsShowPassword(!isShowPassword)}
-                  >
-                    {isShowPassword === false ? (
-                      <IoMdEye className="text-[20px] opacity-75" />
-                    ) : (
-                      <IoMdEyeOff className="text-[20px] opacity-75" />
-                    )}
-                  </Button>
-                </div>
-
-                <div className="w-[50%] form-group relative">
-                  <TextField
-                    label="New Password"
-                    type={isShowPassword2 === false ? "password" : "text"}
-                    variant="outlined"
-                    size="small"
-                    className="w-full"
-                    name="newPassword"
-                    onChange={onChangeInput}
-                    value={changePassword.newPassword}
-                    disabled={isLoading2 === true ? true : false}
-                  />
-                  <Button
-                    className="!absolute top-[3px] right-[3px] z-50 !w-[35px] !h-[35px] !min-w-[35px] !rounded-full !text-black opacity-75"
-                    onClick={() => setIsShowPassword2(!isShowPassword2)}
-                  >
-                    {isShowPassword2 === false ? (
-                      <IoMdEye className="text-[20px] opacity-75" />
-                    ) : (
-                      <IoMdEyeOff className="text-[20px] opacity-75" />
-                    )}
-                  </Button>
-                </div>
-              </div>
-              <div className="flex items-center mt-4 gap-5">
-                <div className="w-[49%] form-group relative">
-                  <TextField
-                    label="Confirm Password"
-                    type={isShowPassword3 === false ? "password" : "text"}
-                    variant="outlined"
-                    size="small"
-                    className="w-full"
-                    name="confirmPassword"
-                    onChange={onChangeInput}
-                    value={changePassword.confirmPassword}
-                    disabled={isLoading2 === true ? true : false}
-                  />
-                  <Button
-                    className="!absolute top-[3px] right-[3px] z-50 !w-[35px] !h-[35px] !min-w-[35px] !rounded-full !text-black opacity-75"
-                    onClick={() => setIsShowPassword3(!isShowPassword3)}
-                  >
-                    {isShowPassword3 === false ? (
-                      <IoMdEye className="text-[20px] opacity-75" />
-                    ) : (
-                      <IoMdEyeOff className="text-[20px] opacity-75" />
-                    )}
-                  </Button>
-                </div>
-              </div>
-
-              <br />
-              <div className="flex items-center">
-                <Button
-                  type="submit"
-                  className="btn-blue btn-lg w-[250px]"
-                  disabled={isLoading2 === true ? true : false}
-                >
-                  {isLoading2 === true ? (
-                    <CircularProgress color="inherit" />
-                  ) : (
-                    "Change Password"
-                  )}
-                </Button>
-              </div>
-            </form>
-          </div>
-        </Collapse>
-      </div>
+      </Collapse>
     </>
   );
 };

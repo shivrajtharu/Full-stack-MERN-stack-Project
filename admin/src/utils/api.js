@@ -4,17 +4,18 @@ const apiUrl = import.meta.env.VITE_API_URL;
 
 const axiosInstance = axios.create({
   baseURL: apiUrl,
-  timeout: 10000, // 10 seconds
+  timeout: 10000,
   headers: {
     "Content-Type": "application/json",
   },
 });
 
-// Include Bearer token and auto-handle multipart/form-data
+// Auth & multipart handling
 axiosInstance.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("accessToken");
 
+    // Auto remove Content-Type for FormData (let browser handle it)
     if (
       config.data instanceof FormData ||
       (config.headers && config.headers["Content-Type"] === "multipart/form-data")
@@ -22,6 +23,7 @@ axiosInstance.interceptors.request.use(
       delete config.headers["Content-Type"];
     }
 
+    // Attach token if available
     if (token) {
       config.headers = config.headers || {};
       config.headers.Authorization = `Bearer ${token}`;
@@ -32,7 +34,7 @@ axiosInstance.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// 🟦 Reusable error handler
+// Central error handler
 const handleAxiosError = (error) => {
   console.error("API Error:", error);
 
@@ -53,26 +55,21 @@ const handleAxiosError = (error) => {
   };
 };
 
-// ✅ Upload array of images
-export const uploadImages = async (url, imagesArray) => {
+//  Upload image(s)
+export const uploadImages = async (url, data) => {
   try {
-    const formData = new FormData();
-    imagesArray.forEach((img, index) => {
-      formData.append("images", img);
-    });
-
-    const res = await axiosInstance.post(url, formData, {
+    const res = await axiosInstance.post(url, data, {
       headers: {
-        "Content-Type": "multipart/form-data",
+        "Content-Type": "multipart/form-data", // Will be auto-removed by interceptor
       },
     });
-    return res.data || {};
+    return res;
   } catch (error) {
     return handleAxiosError(error);
   }
 };
 
-// ✅ POST request
+// POST request
 export const postData = async (url, data) => {
   try {
     const res = await axiosInstance.post(url, data);
@@ -82,7 +79,7 @@ export const postData = async (url, data) => {
   }
 };
 
-// ✅ GET request
+// GET request
 export const fetchDataFromApi = async (url) => {
   try {
     const res = await axiosInstance.get(url);
@@ -92,7 +89,7 @@ export const fetchDataFromApi = async (url) => {
   }
 };
 
-// ✅ PUT/UPDATE request
+// PUT request
 export const editData = async (url, updateData) => {
   try {
     const res = await axiosInstance.put(url, updateData);
@@ -102,10 +99,23 @@ export const editData = async (url, updateData) => {
   }
 };
 
-// ✅ Optional DELETE
+// DELETE request (used for removing image)
 export const deleteData = async (url) => {
   try {
     const res = await axiosInstance.delete(url);
+    return res.data || {};
+  } catch (error) {
+    return handleAxiosError(error);
+  }
+};
+
+export const deleteMultipleData = async (url, data = null) => {
+  try {
+    const res = await axiosInstance.request({
+      url,
+      method: 'DELETE',
+      data: data || {},
+    });
     return res.data || {};
   } catch (error) {
     return handleAxiosError(error);

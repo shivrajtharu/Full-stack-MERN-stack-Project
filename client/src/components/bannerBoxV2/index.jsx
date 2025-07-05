@@ -13,7 +13,7 @@ const BannerBoxV2 = (props) => {
         <div
           className={`info absolute top-0 p-5 ${
             props.info === "left" ? "left-0" : "right-0"
-          } w-[70%] h-[100%] z-50 flex flex-col items-center justify-center gap-2 ${props.info=== 'left' ? '' : 'pl-16'}`}
+          } w-[70%] h-[100%] z-40 flex flex-col items-center justify-center gap-2 ${props.info=== 'left' ? '' : 'pl-16'}`}
         >
           <h2 className="text-[18px] font-[600]">
             Samsung Gear VR Camera

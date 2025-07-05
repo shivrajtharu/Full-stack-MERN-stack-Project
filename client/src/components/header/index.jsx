@@ -81,7 +81,7 @@ const Header = () => {
   const { userData } = context;
 
   return (
-    <header className="bg-white">
+    <header className="bg-white sticky -top-[150px] z-50">
       <div className="top-strip mt-1 py-2 border-t-[1px] border-b-[1px] border-gray-250">
         <div className="container">
           <div className="flex items-center justify-between">

@@ -1,24 +1,8 @@
 import { RouterProvider } from "react-router-dom";
-import React, { createContext, useEffect, useState } from "react";
-import AddProduct from "./pages/products/addProduct";
-import Dialog from "@mui/material/Dialog";
-import Toolbar from "@mui/material/Toolbar";
-import IconButton from "@mui/material/IconButton";
-import Typography from "@mui/material/Typography";
-import { IoMdClose } from "react-icons/io";
-import Slide from "@mui/material/Slide";
-import AddHomeSlide from "./pages/homeSliderBanners/addHomeSlide";
-import AddCategory from "./pages/category/addCategroy";
-import AddSubCategory from "./pages/category/addSubCategroy";
+import { createContext, useEffect, useState } from "react";
 import router from "../src/routes";
 import toast, { Toaster } from "react-hot-toast";
 import { fetchDataFromApi } from "./utils/api";
-import { AppBar } from "@mui/material";
-import AddAddress from "./pages/address/addAddress";
-
-const Transition = React.forwardRef(function Transition(props, ref) {
-  return <Slide direction="up" ref={ref} {...props} />;
-});
 
 export const MyContext = createContext();
 
@@ -29,14 +13,14 @@ function App() {
   const [isLogin, setIsLogin] = useState();
   const [isSideBarOpen, setIsSideBarOpen] = useState(true);
   const [address, setAddress] = useState([]);
+  const [catData, setCatData] = useState([]);
+  const [refreshToggle, setRefreshToggle] = useState(false);
 
   const [isOpenFullScreenPanel, setIsOpenFullScreenPanel] = useState({
     open: false,
     model: "",
+    id: "",
   });
-  const handleCloseFullScreenPanel = () => {
-    setIsOpenFullScreenPanel((open = false));
-  };
 
   const notify = (msg, type) => {
     const types = {
@@ -80,6 +64,24 @@ function App() {
     fetchUserDetails();
   }, []);
 
+  const fetchCategories = async () => {
+    try {
+      const res = await fetchDataFromApi("/api/category/");
+      if (Array.isArray(res?.data)) {
+        setCatData(res.data);
+        // console.log(res.data)
+      } else {
+        setCatData([]);
+      }
+    } catch (error) {
+      console.error("Failed to fetch categories:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchCategories();
+  }, [refreshToggle]);
+
   const values = {
     isSideBarOpen,
     setIsSideBarOpen,
@@ -91,49 +93,18 @@ function App() {
     setUserData,
     userData,
     address,
-    setAddress
+    setAddress,
+    catData,
+    setCatData,
+    refreshToggle,
+    setRefreshToggle,
+    fetchCategories,
   };
 
   return (
     <>
       <MyContext.Provider value={values}>
         <RouterProvider router={router} />
-
-        <Dialog
-          fullScreen
-          open={isOpenFullScreenPanel.open}
-          onClose={handleCloseFullScreenPanel}
-          slots={{ transition: Transition }}
-        >
-          <AppBar sx={{ position: "relative" }}>
-            <Toolbar>
-              <IconButton
-                edge="start"
-                color="inherit"
-                onClick={handleCloseFullScreenPanel}
-                aria-label="close"
-              >
-                <IoMdClose className="text-gray-800" />
-              </IconButton>
-              <Typography sx={{ ml: 2, flex: 1 }} variant="h6" component="div">
-                <span className="text-gray-800">
-                  {isOpenFullScreenPanel?.model}
-                </span>
-              </Typography>
-            </Toolbar>
-          </AppBar>
-          {isOpenFullScreenPanel?.model === "Add Product" && <AddProduct />}
-          {isOpenFullScreenPanel?.model === "Add Home Slide" && (
-            <AddHomeSlide />
-          )}
-          {isOpenFullScreenPanel?.model === "Add New Category" && (
-            <AddCategory />
-          )}
-          {isOpenFullScreenPanel?.model === "Add New Sub Category" && (
-            <AddSubCategory />
-          )}
-          {isOpenFullScreenPanel?.model === "Add New Address" && <AddAddress />}
-        </Dialog>
       </MyContext.Provider>
       <Toaster />
     </>

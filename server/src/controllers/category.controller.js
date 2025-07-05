@@ -21,10 +21,7 @@ class CategoryController {
 
       let uploadedImages = [];
       for (let i = 0; i < image?.length; i++) {
-        const result = await cloudinary.uploader.upload(
-          image[i].path,
-          options
-        );
+        const result = await cloudinary.uploader.upload(image[i].path, options);
         uploadedImages.push(result.secure_url);
         // Use the actual file path from multer (image[i].path) for deletion
         const filePath = image[i].path;
@@ -41,11 +38,72 @@ class CategoryController {
       return res.json({
         success: true,
         error: false,
-        images: uploadedImages
-      })
-
+        images: uploadedImages,
+      });
     } catch (exception) {
       next(exception);
+    }
+  };
+
+  // remove image from cloudinary
+  removeImage = async (req, res, next) => {
+    try {
+      const imgUrl = req.query.img;
+
+      if (!imgUrl) {
+        return res.status(400).json({
+          success: false,
+          error: true,
+          message: "Image URL is required.",
+        });
+      }
+
+      const uploadIndex = imgUrl.indexOf("/upload/");
+      if (uploadIndex === -1) {
+        return res.status(400).json({
+          success: false,
+          error: true,
+          message: "Invalid Cloudinary URL format.",
+        });
+      }
+
+      // Get the part after /upload/
+      let publicIdWithExtension = imgUrl.substring(uploadIndex + 8); // +8 to skip "/upload/"
+      // Remove versioning like "v1234567890"
+      publicIdWithExtension = publicIdWithExtension.replace(/v\d+\//, "");
+
+      // Remove all extensions (.jpg, .webp, .png, etc.)
+      const publicId = publicIdWithExtension.replace(
+        /\.(webp|jpg|jpeg|png)+$/i,
+        ""
+      );
+
+      console.log("Deleting Cloudinary public_id:", publicId);
+
+      const result = await cloudinary.uploader.destroy(publicId);
+
+      if (result.result === "ok" || result.result === "not found") {
+        return res.json({
+          success: true,
+          error: false,
+          message: "Image removed successfully or already deleted.",
+          status: "IMAGE_REMOVED",
+        });
+      } else {
+        return res.status(500).json({
+          success: false,
+          error: true,
+          message: "Failed to remove image from Cloudinary.",
+          status: "IMAGE_REMOVE_FAILED",
+        });
+      }
+    } catch (error) {
+      console.error("Cloudinary Delete Error:", error);
+      return res.status(500).json({
+        success: false,
+        error: true,
+        message: "Internal server error while deleting image.",
+      });
     }
   };
 
@@ -68,7 +126,7 @@ class CategoryController {
         return res.status(500).json({
           error: true,
           success: false,
-          message: "Category not created",
+          message: "Failed to Create Category",
           status: "CATEGORY_NOT_CREATED",
         });
       }
@@ -80,7 +138,7 @@ class CategoryController {
         error: false,
         message: "Category created successfully",
         status: "CATEGORY_CREATED",
-        category: category
+        category: category,
       });
     } catch (exception) {
       next(exception);
@@ -108,11 +166,11 @@ class CategoryController {
       });
 
       return res.json({
+        success: true,
+        error: false,
         message: "Categories fetched successfully",
         status: "CATEGORY_FETCHED",
-        data: {
-          categories: rootCategories,
-        },
+        data: rootCategories,
       });
     } catch (exception) {
       next(exception);
@@ -128,12 +186,16 @@ class CategoryController {
       if (!categoryCount) {
         return res.status(404).json({
           code: 404,
+          success: false,
+          error: true,
           message: "No Category found",
           status: "PRODUCT_NOT_FOUND",
         });
       }
 
       return res.json({
+        success: true,
+        error: false,
         message: "Success",
         status: "Ok",
         CategoryCount: categoryCount,
@@ -149,6 +211,8 @@ class CategoryController {
 
       if (!categories) {
         return res.status(404).json({
+          success: false,
+          error: true,
           code: 404,
           message: "Category does not exist",
           status: "Not Found",
@@ -161,6 +225,8 @@ class CategoryController {
           }
         }
         return res.json({
+          success: true,
+          error: false,
           message: "success",
           status: "Ok",
           subCategoryCount: subCatList.length,
@@ -177,6 +243,8 @@ class CategoryController {
 
       if (!category) {
         return res.status(500).json({
+          success: false,
+          error: true,
           code: 500,
           message: "Category with the given id was not found.",
           status: "CATEGORY_NOT_FOUND",
@@ -184,6 +252,8 @@ class CategoryController {
       }
 
       return res.json({
+        success: true,
+        error: false,
         category: category,
         message: "Success",
         status: "Ok",
@@ -200,6 +270,8 @@ class CategoryController {
 
       if (!category) {
         return res.status(404).json({
+          success: false,
+          error: true,
           code: 404,
           message: "Category not found",
           status: "NOT_FOUND",
@@ -241,12 +313,16 @@ class CategoryController {
       if (!deleteCategory) {
         return res.status(422).json({
           code: 422,
+          success: false,
+          error: true,
           message: "Category can not be deleted",
           status: "CAN_NOT_DELETE",
         });
       }
 
       return res.json({
+        success: true,
+        error: false,
         message: "Category Deleted Successfully",
         status: "DELETED",
       });
@@ -255,76 +331,80 @@ class CategoryController {
     }
   };
 
-  updateCategory = async (req, res, next) => {
-    try {
-      const oldCategory = await CategoryModel.findById(req.params.id);
+ updateCategory = async (req, res, next) => {
+  try {
+    const oldCategory = await CategoryModel.findById(req.params.id);
 
-      if (!oldCategory) {
-        return res.status(404).json({
-          code: 404,
-          message: "Category not found",
-          status: "NOT_FOUND",
-        });
-      }
-
-      let updatedImages = oldCategory.images; // Start with old images
-
-      // If new files are uploaded
-      if (req.files && req.files.length > 0) {
-        // Delete old images from Cloudinary
-        for (let imgUrl of oldCategory.images) {
-          const publicId = imgUrl.split("/").pop().split(".")[0];
-          await cloudinary.uploader.destroy(publicId);
-        }
-
-        // Upload new images
-        updatedImages = [];
-        const options = {
-          use_filename: true,
-          unique_filename: false,
-          overwrite: false,
-        };
-
-        for (let i = 0; i < req.files.length; i++) {
-          const result = await cloudinary.uploader.upload(
-            req.files[i].path,
-            options
-          );
-          updatedImages.push(result.secure_url);
-          fs.unlinkSync(req.files[i].path); // Clean up local files
-        }
-      }
-
-      const updatedCategory = await CategoryModel.findByIdAndUpdate(
-        req.params.id,
-        {
-          name: req.body.name,
-          images: updatedImages,
-          parentId: req.body.parentId,
-          parentCatName: req.body.parentCatName,
-        },
-        {
-          new: true,
-        }
-      );
-
-      if (!updatedCategory) {
-        return res.status(422).json({
-          code: 422,
-          message: "Category cannot be updated",
-          status: "CANNOT_UPDATED",
-        });
-      }
-
-      return res.json({
-        message: "Category Updated Successfully",
-        status: "UPDATED",
-        category: updatedCategory,
+    if (!oldCategory) {
+      return res.status(404).json({
+        error: true,
+        success: false,
+        message: "Category not found",
       });
-    } catch (exception) {
-      next(exception);
     }
-  };
+
+    let updatedImages = req.body.images || oldCategory.images;
+
+    //  Delete any images requested by the frontend
+    if (req.body.deletedImages && Array.isArray(req.body.deletedImages)) {
+      for (let imgUrl of req.body.deletedImages) {
+        const publicId = imgUrl.split("/").pop().split(".")[0];
+        await cloudinary.uploader.destroy(publicId);
+      }
+    }
+
+    // If new files are uploaded, upload and overwrite image list
+    if (req.files && req.files.length > 0) {
+      // Optional: Clear remaining old images again to avoid duplication
+      for (let imgUrl of updatedImages) {
+        const publicId = imgUrl.split("/").pop().split(".")[0];
+        await cloudinary.uploader.destroy(publicId);
+      }
+
+      updatedImages = [];
+      const options = {
+        use_filename: true,
+        unique_filename: false,
+        overwrite: false,
+      };
+
+      for (let file of req.files) {
+        const result = await cloudinary.uploader.upload(file.path, options);
+        updatedImages.push(result.secure_url);
+        fs.unlinkSync(file.path);
+      }
+    }
+
+    const updatedCategory = await CategoryModel.findByIdAndUpdate(
+      req.params.id,
+      {
+        name: req.body.name,
+        images: updatedImages,
+        parentId: req.body.parentId,
+        parentCatName: req.body.parentCatName,
+      },
+      { new: true }
+    );
+
+    if (!updatedCategory) {
+      return res.status(422).json({
+        error: true,
+        success: false,
+        message: "Category cannot be updated",
+      });
+    }
+
+    return res.json({
+      success: true,
+      error: false,
+      message: "Category Updated Successfully",
+      category: updatedCategory,
+    });
+  } catch (exception) {
+    next(exception);
+  }
+};
+
 }
 
 const categoryCtrl = new CategoryController();

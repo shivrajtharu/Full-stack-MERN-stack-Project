@@ -20,7 +20,14 @@ const AdminLayout = () => {
           >
             <SideBar />
           </div>
-            <Outlet /> {/* THIS RENDERS CHILD ROUTES */}
+          <div
+        className={`contentRight py-4 px-5 ${
+          context.isSideBarOpen === false ? "w-[100%]" : "w-[82%]"
+        } transition-all`}
+      >
+        <Outlet /> {/* THIS RENDERS CHILD ROUTES */}
+      </div>
+            
         </div>
       </section>
     </>

@@ -5,6 +5,7 @@ import uploader from "../middlewares/multipart-handle.middleware.js";
 
 const categoryRouter = Router();
 categoryRouter.post('/uploadImages', permissionCheck, uploader("image").array('images'), categoryCtrl.uploadImages);
+categoryRouter.delete('/delete-image', permissionCheck, categoryCtrl.removeImage);
 categoryRouter.post('/create-category', permissionCheck, categoryCtrl.createCategory);
 categoryRouter.get('/', categoryCtrl.listAllCategories);
 categoryRouter.get('/count', categoryCtrl.getCategoriesCounts);

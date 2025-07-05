@@ -14,7 +14,6 @@ cloudinary.config({
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
-var ImagesArr = [];
 
 class UserController {
   registerUser = async (req, res, next) => {
@@ -249,79 +248,51 @@ class UserController {
   };
 
   // upload and update user avatar
-  userAvatar = async (req, res, next) => {
-    try {
-      ImagesArr = [];
-      const userId = req.userId;
-      const image = req.files;
+ userAvatar = async (req, res, next) => {
+  try {
+    const userId = req.userId;
+    const image = req.file;
 
-      const user = await UserModel.findOne({ _id: userId });
-
-      if (!user) {
-        return res.status(404).json({
-          code: 404,
-          error: true,
-          success: false,
-          message: "User not found.",
-          status: "USER_NOT_FOUND",
-        });
-      }
-
-      // Check if the user already has an avatar and remove it from Cloudinary
-      const userAvatar = user?.avatar;
-      const imgUrl = userAvatar;
-      const urlArr = imgUrl.split("/");
-      const imageName = urlArr[urlArr.length - 1].split(".")[0];
-
-      if (imageName) {
-        const res = await cloudinary.uploader.destroy(
-          imageName,
-          (error, result) => {}
-        );
-      }
-
-      // Upload images to Cloudinary
-      const options = {
-        usefilename: true,
-        unique_filename: false,
-        overwrite: false,
-      };
-
-      for (let i = 0; i < image?.length; i++) {
-        try {
-          const result = await cloudinary.uploader.upload(
-            image[i].path,
-            options
-          );
-          ImagesArr.push(result.secure_url);
-          fs.unlinkSync(image[i].path); // Delete the local file after upload
-          console.log(image[i].filename);
-        } catch (error) {
-          return res.status(500).json({
-            code: 500,
-            error: true,
-            success: false,
-            message: "Error uploading image.",
-            status: "UPLOAD_ERROR",
-            error: error.message,
-          });
-        }
-      }
-
-      // Update user avatar in the database
-      user.avatar = ImagesArr[0];
-      await user.save();
-
-      return res.json({
-        error: false,
-        success: true,
-        _id: userId,
-        avatar: ImagesArr[0],
+    if (!image) {
+      return res.status(400).json({
+        error: true,
+        success: false,
+        message: "No image uploaded.",
       });
-    } catch (exception) {
-      next(exception);
     }
-  };
+
+    const user = await UserModel.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found." });
+    }
+
+    if (user.avatar) {
+      const imageName = user.avatar.split("/").pop().split(".")[0];
+      await cloudinary.uploader.destroy(imageName);
+    }
+
+    const result = await cloudinary.uploader.upload(image.path, {
+      use_filename: true,
+      unique_filename: false,
+      overwrite: true,
+    });
+
+    fs.unlinkSync(image.path);
+
+    user.avatar = result.secure_url;
+    await user.save();
+
+    return res.json({
+      error: false,
+      success: true,
+      avatar: user.avatar,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+
 
   // remove image from cloudinary and database
   removeImage = async (req, res, next) => {

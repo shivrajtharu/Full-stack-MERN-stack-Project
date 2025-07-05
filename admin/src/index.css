@@ -62,3 +62,40 @@ button .MuiCircularProgress-root{width: 30px !important; height: 30px !important
 }
 .react-international-phone-input{width: 100% !important;}
 .react-international-phone-country-selector-button{width: 55px !important;}
+
+.Mui-focused fieldset legend{display: none !important;}
+
+.zoomProductSliderThumb.space .swiper-wrapper{padding-top: 38px !important;}
+.zoomProductSliderThumb .swiper-button-next{
+  bottom: 0px !important;
+  right: inherit !important; 
+  top: inherit !important;
+  width: 100% !important;
+  height: 30px !important;
+  border-radius: 0px !important;
+}
+.zoomProductSliderThumb .swiper-button-prev{
+  left: 0 !important;
+  top: 20px !important; 
+  right: inherit !important;
+  width: 100% !important;
+  height: 30px !important;
+  border-radius: 0px !important;
+}
+.zoomProductSliderThumb .swiper-button-next::after, .zoomProductSliderThumb .swiper-button-prev::after{
+  transform: rotate(90deg);
+}
+.swiper-button-prev::after,
+.swiper-button-next::after {
+  font-size: 22px !important;
+  color: #000;
+}
+.swiper-button-prev:hover,
+.swiper-button-next:hover {
+  background: #f03170 !important;
+}
+.swiper-slide .iiz{height: 400px !important; overflow: hidden !important;} 
+
+.contentRight{padding-top: 80px !important;}
+
+.MuiTableCell-root{padding-left: 80px !important;}

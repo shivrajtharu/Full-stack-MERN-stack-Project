@@ -1,26 +1,23 @@
 import { Button } from "@mui/material";
-import  { useState } from "react";
+import { useState } from "react";
 import { FaAngleDown, FaAngleUp } from "react-icons/fa";
 import Badge from "../../components/badge";
 import SearchBox from "../../components/searchBox";
 
 const Orders = () => {
-    const [isOpenedOrderedProduct, setIsOpenedOrderedProduct] = useState(null);
-    
-      const isShowOrderedProduct = (index) => {
-        if (isOpenedOrderedProduct === index) {
-          setIsOpenedOrderedProduct(null);
-        } else {
-          setIsOpenedOrderedProduct(index);
-        }
-      };
-    
+  const [isOpenedOrderedProduct, setIsOpenedOrderedProduct] = useState(null);
 
+  const isShowOrderedProduct = (index) => {
+    if (isOpenedOrderedProduct === index) {
+      setIsOpenedOrderedProduct(null);
+    } else {
+      setIsOpenedOrderedProduct(index);
+    }
+  };
 
   return (
     <>
-    <div className="flex-col w-[82%] px-5 py-0 mt-3">
-        <div className="card my-5 shadow-md sm:rounded-lg bg-white">
+      <div className="card my-5 shadow-md sm:rounded-lg bg-white">
         <div className="flex items-center justify-between px-5 p-5">
           <h2 className="text-[18px] font-[600]">Recent Orders</h2>
           <div className="w-[40%]">
@@ -473,8 +470,6 @@ const Orders = () => {
           </table>
         </div>
       </div>
-    </div>
-      
     </>
   );
 };
